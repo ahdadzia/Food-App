@@ -37,23 +37,62 @@ struct Home: View {
                 Divider()
                 
                 HStack(spacing: 15){
+                    
+                    Image(systemName: "magnifyingglass")
+                        .font(.title)
+                        .foregroundColor(.gray)
+                    
                     TextField("Search", text: $HomeModel.search)
                     
-                    if HomeModel.search != "" {
-                        Button(action: {}, label: {
-                            Image(systemName: "magnifyingglass")
-                                .font(.title)
-                                .foregroundColor(.gray)
-                        })
-                        .animation(.easeIn)
-                    }
                 }
                 .padding(.horizontal)
                 .padding(.top, 10)
                 
                 Divider()
                 
-                Spacer()
+                // Spacer() di ganti sama scrollView
+                if HomeModel.items.isEmpty{
+                    Spacer()
+                    ProgressView()//loading
+                    Spacer()
+                } else {
+                    ScrollView(.vertical, showsIndicators: false, content: {
+                        VStack(spacing: 25){
+                            ForEach(HomeModel.filtered){ item in
+                                
+                                ZStack(alignment: Alignment(horizontal: .center, vertical: .top), content: {
+                                    
+                                    ItemView(item: item)
+                                    
+                                    HStack{
+                                        Text("FREE DELIVERY")
+                                            .foregroundColor(.white)
+                                            .padding(.vertical, 10)
+                                            .padding(.horizontal)
+                                            .background(Color.pink)
+                                        
+                                        Spacer(minLength: 0)
+                                        
+                                        Button(action: {
+                                            HomeModel.addToCart(item: item)
+                                        }, label: {
+                                            Image(systemName: item.isAdded ? "checkmark" : "plus")
+                                                .foregroundColor(.white)
+                                                .padding(10)
+                                                .background(item.isAdded ? Color.green : Color.pink)
+                                                .clipShape(Circle())
+                                        })
+                                    }
+                                    .padding(.trailing, 10)
+                                    .padding(.top, 10)
+                                    
+                                })
+                                .frame(width: UIScreen.main.bounds.width - 30)
+                            }
+                        }
+                        .padding(.top, 10)
+                    })
+                }
             }
             
             HStack{
@@ -80,6 +119,21 @@ struct Home: View {
         }
         .onAppear(perform: {
             HomeModel.locationManager.delegate = HomeModel
+        })
+        .onChange(of: HomeModel.search, perform: { value in
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3){
+                
+                if value == HomeModel.search && HomeModel.search != ""{
+                    // search data
+                    HomeModel.filterData()
+                }
+            }
+            
+            if HomeModel.search == "" {
+                // reset all data
+                withAnimation(.linear){ HomeModel.filtered = HomeModel.items }
+            }
         })
     }
 }
